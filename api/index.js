@@ -150,6 +150,12 @@ app.post("/login", async (req, res) => {
   }
 });
 
+app.post("/orders", async (req, res) => {
+  const id = req.body.id;
+  const orderDoc = await order.find({ userId: id });
+  res.json(orderDoc);
+});
+
 app.post("/create-checkout-session", async (req, res) => {
   const cart = req.body.cartItems;
   let items = cart.map((item) => {
