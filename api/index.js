@@ -20,9 +20,13 @@ app.use(
   })
 );
 
+let pendingCart;
+
 const createOrder = async (customer, data) => {
-  const items = JSON.parse(customer.metadata.cart);
-  console.log(items);
+  const user = await order.find({ userId: customer.metadata.userId });
+  console.log(user);
+  let items = JSON.parse(pendingCart);
+
   const newOrder = await order.create({
     userId: customer.metadata.userId,
     customerId: data.customer,
@@ -32,6 +36,8 @@ const createOrder = async (customer, data) => {
     shipping: data.customer_details,
     payment_status: data.payment_status,
   });
+
+  pendingCart = null;
 };
 const endpointSecret =
   "whsec_67afecca07b685d1fd35a4f3ca485cb547dc20a67faca473e4738697e1debc73";
@@ -167,9 +173,9 @@ app.post("/create-checkout-session", async (req, res) => {
   const customer = await stripe.customers.create({
     metadata: {
       userId: req.body.userId,
-      cart: JSON.stringify(items),
     },
   });
+  pendingCart = JSON.stringify(items);
   const line_items = req.body.cartItems.map((item) => {
     return {
       price_data: {
@@ -199,6 +205,12 @@ app.post("/create-checkout-session", async (req, res) => {
   res.send({ url: session.url });
 });
 
+app.post("/clearHistory", async (req, res) => {
+  const orderDoc = await order.deleteMany({});
+  if (orderDoc) {
+    res.json("History Cleared");
+  }
+});
 // app.post("/auth/google/refresh-token", async (req, res) => {
 //   const user = new UserRefreshClient(
 //     clientId,
